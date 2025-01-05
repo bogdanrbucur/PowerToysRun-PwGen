@@ -8,7 +8,7 @@
     "Language": "csharp",
     "Website": "https://github.com/bogdanrbucur/PowerToysRun-PwGen",
     "ExecuteFileName": "Community.PowerToys.Run.Plugin.PasswordGenerator.dll",
-    "IsGlobal": true,
+    "IsGlobal": false,
     "IcoPathDark": "icon.png",
     "IcoPathLight": "icon.png"
 }
