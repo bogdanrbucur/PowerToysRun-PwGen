@@ -4,7 +4,7 @@
     "ActionKeyword": "pwg",
     "Name": "Password Generator",
     "Author": "Bogdan Bucur",
-    "Version": "0.9.0",
+    "Version": "1.0.0",
     "Language": "csharp",
     "Website": "https://github.com/bogdanrbucur/PowerToysRun-PwGen",
     "ExecuteFileName": "Community.PowerToys.Run.Plugin.PasswordGenerator.dll",

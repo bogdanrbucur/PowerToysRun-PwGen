@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Wox.Infrastructure;
 using Wox.Plugin.Common;
 using Microsoft.PowerToys.Settings.UI.Library;
+using System.Security.Cryptography;
 
 namespace Community.PowerToys.Run.Plugin.PasswordGenerator
 {
@@ -27,7 +28,19 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
             int length = 16; // Default password length
 
             // If the user provides an argument, check if it's a number
-            if (args.Length > 0)
+            // Convert it to an integer and use it as the password length
+            if (args.Length > 0 && int.TryParse(args[0], out int parsedLength) && parsedLength > 128)
+            {
+                return new List<Result>
+                {
+                    new() {
+                        Title = "Password can be maximum 128 characters.",
+                        SubTitle = "Please provide a number less than 129.",
+                        IcoPath = IconPath,
+                    },
+                };
+            }
+            else if (args.Length > 0)
             {
                 if (int.TryParse(args[0], out int userLength))
                 {
@@ -39,10 +52,9 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
 
             return new List<Result>
             {
-                new Result
-                {
+                new() {
                     Title = password,
-                     SubTitle = $"Standard password ({length} characters). Press Enter to copy.",
+                    SubTitle = $"Password {length} characters long, including special. Press Enter to copy.",
                     IcoPath = IconPath,
                     Action = e =>
                     {
@@ -50,10 +62,9 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
                         return true;
                     },
                 },
-                new Result
-                {
+                new() {
                     Title = applePassword,
-                     SubTitle = "Apple-style password (xxxxx-yyyyy-zzzzz). Press Enter to copy.",
+                    SubTitle = "Apple-style password. Press Enter to copy.",
                     IcoPath = IconPath,
                     Action = e =>
                     {
@@ -67,59 +78,78 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
         private static string GeneratePassword(int length)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-            return new string(Enumerable.Repeat(chars, length)
-                .Select(s => s[new Random().Next(s.Length)]).ToArray());
-        }
+            char[] password = new char[length];
+            byte[] randomBytes = new byte[length];
 
-        private static string GenerateAppleStylePassword()
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+
+            for (int i = 0; i < length; i++)
+            {
+                password[i] = chars[randomBytes[i] % chars.Length];
+            }
+
+            return new string(password);
+        }
+        // 71-bit entropy compliant with Apple's password requirements
+        private string GenerateAppleStylePassword()
         {
             const string lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
             const string uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             const string numbers = "0123456789";
-            Random random = new Random();
+            char[] password = new char[20];
 
-            // Generate three 6-character segments
-            string part1 = new string(Enumerable.Repeat(lowercaseChars, 6)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            // Step 1: Fill with 16 random lowercase letters
+            for (int i = 0; i < 20; i++)
+            {
+                password[i] = GetRandomChar(lowercaseChars);
+            }
 
-            string part2 = new string(Enumerable.Repeat(lowercaseChars, 6)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            // Step 2: Insert exactly 1 uppercase letter in a random group
+            int uppercaseGroup = GetRandomInt(0, 3);
+            int uppercaseIndex = GetRandomInt(0, 6) + (uppercaseGroup * 6);
+            password[uppercaseIndex] = GetRandomChar(uppercaseChars);
 
-            string part3 = new string(Enumerable.Repeat(lowercaseChars, 6)
-                .Select(s => s[random.Next(s.Length)]).ToArray());
+            // Step 3: Insert exactly 1 digit in a different random group
+            int digitGroup;
+            do
+            {
+                digitGroup = GetRandomInt(0, 3);
+            } while (digitGroup == uppercaseGroup);
 
-            // Pick a random part to insert a digit (Apple passwords always contain exactly one number)
-            int partToModify = random.Next(3); // 0, 1, or 2
-            int insertPosition = random.Next(6); // Random position within the part
-            char randomDigit = numbers[random.Next(numbers.Length)];
+            int digitIndex = GetRandomInt(0, 6) + (digitGroup * 6);
+            password[digitIndex] = GetRandomChar(numbers);
 
-            if (partToModify == 0)
-                part1 = part1.Substring(0, insertPosition) + randomDigit + part1.Substring(insertPosition + 1);
-            else if (partToModify == 1)
-                part2 = part2.Substring(0, insertPosition) + randomDigit + part2.Substring(insertPosition + 1);
-            else
-                part3 = part3.Substring(0, insertPosition) + randomDigit + part3.Substring(insertPosition + 1);
+            // Step 4: Insert exactly 2 hyphens at fixed positions (6th and 13th characters)
+            password[6] = '-';
+            password[13] = '-';
 
-            // Introduce rare uppercase letters (~15-20% chance per character)
-            part1 = RarelyCapitalize(part1, random);
-            part2 = RarelyCapitalize(part2, random);
-            part3 = RarelyCapitalize(part3, random);
-
-            return $"{part1}-{part2}-{part3}";
+            return new string(password);
         }
 
-        // Function to introduce rare capitalization (~15-20% chance per character)
-        private static string RarelyCapitalize(string input, Random random)
+// Securely generate a random character from a given set
+        private static char GetRandomChar(string characterSet)
         {
-            char[] chars = input.ToCharArray();
-            for (int i = 0; i < chars.Length; i++)
+            byte[] buffer = new byte[1];
+            using (var rng = RandomNumberGenerator.Create())
             {
-                if (random.NextDouble() < 0.15) // 15% chance of making a letter uppercase
-                {
-                    chars[i] = char.ToUpper(chars[i]);
-                }
+                rng.GetBytes(buffer);
             }
-            return new string(chars);
+            return characterSet[buffer[0] % characterSet.Length];
+        }
+
+// Securely generate a random integer within a range
+        private static int GetRandomInt(int min, int max)
+        {
+            byte[] buffer = new byte[4];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(buffer);
+            }
+            int value = BitConverter.ToInt32(buffer, 0) & int.MaxValue; // Ensure positive number
+            return min + (value % (max - min));
         }
 
         public void Init(PluginInitContext context)
