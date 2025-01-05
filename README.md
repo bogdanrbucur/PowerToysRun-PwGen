@@ -21,6 +21,8 @@ Activate with `pwg` in PowerToys Run or your own configured phrase to generate 2
 1. The set length one or default 16 characters long. For example, typing `pwg 10` will generate a 10 character password. Maximum length is 128 characters.
 2. An Apple-style password made of 3 groups of 6 characters separated by dashes.
 
+![screenshot](image.png)
+
 ## Dev
 
 ### Requirements
