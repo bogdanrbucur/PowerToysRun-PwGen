@@ -1,0 +1,14 @@
+{
+    "ID": "3f9c27f4-4b8f-40d4-9f64-47f5f5b74d6b",
+    "Disabled": false,
+    "ActionKeyword": "pwg",
+    "Name": "Password Generator",
+    "Author": "Bogdan Bucur",
+    "Version": "0.9.0",
+    "Language": "csharp",
+    "Website": "https://github.com/bogdanrbucur/PowerToysRun-PwGen",
+    "ExecuteFileName": "Community.PowerToys.Run.Plugin.PasswordGenerator.dll",
+    "IsGlobal": true,
+    "IcoPathDark": "icon.png",
+    "IcoPathLight": "icon.png"
+}
