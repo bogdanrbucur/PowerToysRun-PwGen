@@ -1,6 +1,6 @@
-# PowerToysRun-PwGen
+# Password Generator
 
-Windows PowerToys Run module to quickly generate cryptographically safe random passwords.
+Windows PowerToys Run plugin to quickly generate cryptographically safe random passwords.
 
 ## Install
 
