@@ -40,7 +40,7 @@ Project heavily inspired by [powertoys-run-unicode](https://github.com/nathancar
 
 ## Changelog
 
-0.9.0 - Initial release
-0.9.1 - Changed Apple-style password generation. Limited number of normal password characters to 64.
-1.0.0 - Public release. Tweaked install script, instructions and Apple-style password generation.
-1.0.1 - Implemented cryptographically secure password generation.
+- 0.9.0 - Initial release
+- 0.9.1 - Changed Apple-style password generation. Limited number of normal password characters to 64
+- 1.0.0 - Public release. Tweaked install script, instructions and Apple-style password generation
+- 1.0.1 - Implemented cryptographically secure password generation.
