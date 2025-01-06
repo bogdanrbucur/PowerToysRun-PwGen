@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 namespace Community.PowerToys.Run.Plugin.PasswordGenerator
 {
     public class Main : IPlugin
-{
+    {
         public static string PluginID => "3f9c27f4-4b8f-40d4-9f64-47f5f5b74d6b";
 
         private string IconPath { get; set; }
@@ -129,7 +129,7 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
             return new string(password);
         }
 
-// Securely generate a random character from a given set
+        // Securely generate a random character from a given set
         private static char GetRandomChar(string characterSet)
         {
             byte[] buffer = new byte[1];
@@ -140,7 +140,7 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
             return characterSet[buffer[0] % characterSet.Length];
         }
 
-// Securely generate a random integer within a range
+        // Securely generate a random integer within a range
         private static int GetRandomInt(int min, int max)
         {
             byte[] buffer = new byte[4];

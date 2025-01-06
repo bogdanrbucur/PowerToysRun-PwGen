@@ -33,7 +33,7 @@ Activate with `pwg` in PowerToys Run or your own configured phrase to generate 2
 
 ```powershell
 dotnet restore
-dotnet build -C Release
+dotnet build -c Release
 ```
 
 ## Attribution
