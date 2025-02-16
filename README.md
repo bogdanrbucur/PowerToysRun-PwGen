@@ -18,7 +18,7 @@ Download the release and run `install.ps1` in an elevated terminal to install th
 
 Activate with `pwg` in PowerToys Run or your own configured phrase to generate 2 passwords:
 
-1. The set length one or default 16 characters long. For example, typing `pwg 10` will generate a 10 character password. Maximum length is 128 characters.
+1. The set length one or default 12 characters long. For example, typing `pwg 10` will generate a 10 character password. Maximum length is 128 characters.
 2. An Apple-style password made of 3 groups of 6 characters separated by dashes.
 
 ![screenshot](image.png)
@@ -46,3 +46,4 @@ Project heavily inspired by [powertoys-run-unicode](https://github.com/nathancar
 - 0.9.1 - Changed Apple-style password generation. Limited number of normal password characters to 64
 - 1.0.0 - Public release. Tweaked install script, instructions and Apple-style password generation
 - 1.0.1 - Implemented cryptographically secure password generation.
+- 1.1.0 - Changed default password length to 12 characters. Enhanced Apply-style password generation algorithm to feature more vowels for easier memorization.

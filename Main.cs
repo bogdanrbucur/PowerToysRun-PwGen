@@ -7,6 +7,7 @@ using Wox.Infrastructure;
 using Wox.Plugin.Common;
 using Microsoft.PowerToys.Settings.UI.Library;
 using System.Security.Cryptography;
+using System.IO;
 
 namespace Community.PowerToys.Run.Plugin.PasswordGenerator
 {
@@ -25,7 +26,7 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
         {
             string[] args = query.Search.Trim().Split(' ');
 
-            int length = 16; // Default password length
+            int length = 12; // Default password length
 
             // If the user provides an argument, check if it's a number
             // Convert it to an integer and use it as the password length
@@ -94,39 +95,82 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
             return new string(password);
         }
         // 71-bit entropy compliant with Apple's password requirements
-        private string GenerateAppleStylePassword()
+        private static string GenerateAppleStylePassword()
         {
-            const string lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
-            const string uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            const string numbers = "0123456789";
-            char[] password = new char[20];
+            // Vowel + consonant pools to favor readability
+            const string vowels = "aeiouy";
+            const string consonants = "bcdfghjkmnpqrstvwxz";
 
-            // Step 1: Fill with 16 random lowercase letters
-            for (int i = 0; i < 20; i++)
+            // Uppercase and digits
+            const string uppercaseChars = "ABCDEFGHJKLMNOPQRSTUVWXZ";
+            const string numbers = "0123456789";
+
+            // We'll create 18 total letters (3 blocks * 6 chars) 
+            // then insert 2 hyphens to get 20 chars.
+            char[] passwordLetters = new char[18];
+
+            // 1) Generate 3 "pronounceable" blocks of 6 characters each
+            for (int block = 0; block < 3; block++)
             {
-                password[i] = GetRandomChar(lowercaseChars);
+                // In each 6-char block, we can ensure at least 2 vowels 
+                // and 4 consonants
+                List<char> blockChars = new List<char>(6);
+
+                // Add 2 vowels
+                for (int i = 0; i < 2; i++)
+                {
+                    blockChars.Add(GetRandomChar(vowels));
+                }
+                // Add 4 consonants
+                for (int i = 0; i < 4; i++)
+                {
+                    blockChars.Add(GetRandomChar(consonants));
+                }
+
+                // Shuffle them so they're not always in vowel->consonant order until there are no 3 consecutive consonants
+                do
+                {
+                    Shuffle(blockChars);
+                }
+                while (HasConsecutiveConsonants(string.Concat(blockChars), consonants));
+
+                // Copy this block into the main array
+                int startIndex = block * 6;
+                for (int i = 0; i < 6; i++)
+                {
+                    passwordLetters[startIndex + i] = blockChars[i];
+                }
             }
 
-            // Step 2: Insert exactly 1 uppercase letter in a random group
-            int uppercaseGroup = GetRandomInt(0, 3);
-            int uppercaseIndex = GetRandomInt(0, 6) + (uppercaseGroup * 6);
-            password[uppercaseIndex] = GetRandomChar(uppercaseChars);
+            // 2) Insert exactly 1 uppercase letter in a random group
+            int uppercaseGroup = GetRandomInt(0, 3); // 0..2
+            int uppercaseIndex = uppercaseGroup * 6 + GetRandomInt(0, 6);
+            passwordLetters[uppercaseIndex] = GetRandomChar(uppercaseChars);
 
-            // Step 3: Insert exactly 1 digit in a different random group
+            // 3) Insert exactly 1 digit in a different random group
             int digitGroup;
             do
             {
-                digitGroup = GetRandomInt(0, 3);
-            } while (digitGroup == uppercaseGroup);
+                digitGroup = GetRandomInt(0, 3); // 0..2
+            }
+            while (digitGroup == uppercaseGroup);
 
-            int digitIndex = GetRandomInt(0, 6) + (digitGroup * 6);
-            password[digitIndex] = GetRandomChar(numbers);
+            int digitIndex = digitGroup * 6 + GetRandomInt(0, 6);
+            passwordLetters[digitIndex] = GetRandomChar(numbers);
 
-            // Step 4: Insert exactly 2 hyphens at fixed positions (6th and 13th characters)
-            password[6] = '-';
-            password[13] = '-';
+            // 4) Insert two hyphens in the final string (positions 6 and 13)
+            // So we construct the final 20-char array:
+            char[] finalPassword = new char[20];
+            // Copy first 6 chars
+            Array.Copy(passwordLetters, 0, finalPassword, 0, 6);
+            finalPassword[6] = '-';
+            // Copy next 6 chars
+            Array.Copy(passwordLetters, 6, finalPassword, 7, 6);
+            finalPassword[13] = '-';
+            // Copy last 6 chars
+            Array.Copy(passwordLetters, 12, finalPassword, 14, 6);
 
-            return new string(password);
+            return new string(finalPassword);
         }
 
         // Securely generate a random character from a given set
@@ -150,6 +194,25 @@ namespace Community.PowerToys.Run.Plugin.PasswordGenerator
             }
             int value = BitConverter.ToInt32(buffer, 0) & int.MaxValue; // Ensure positive number
             return min + (value % (max - min));
+        }
+
+        // Check if there are 3 consecutive consonants in the given string
+        private static bool HasConsecutiveConsonants(string str, string consonants)
+        {
+            bool result = Regex.IsMatch(str, $"[{consonants}]{{3}}");
+            return result;
+        }
+
+        // Fisher-Yates shuffle for a List<T>
+        private static void Shuffle<T>(List<T> list)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = GetRandomInt(0, i + 1);
+                T temp = list[i];
+                list[i] = list[j];
+                list[j] = temp;
+            }
         }
 
         public void Init(PluginInitContext context)
